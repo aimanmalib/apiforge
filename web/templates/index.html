@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APIForge - AI API Scaffolding Engine</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🔧 APIForge</h1>
+            <p class="subtitle">API Scaffolding Engine powered by Xiaomi MiMo V2.5 Pro</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Generate API</h2>
+            <div class="form-group">
+                <label for="description">Describe your API:</label>
+                <textarea id="description" rows="6"
+                    placeholder="Example: E-commerce API with products, shopping cart, user authentication with JWT, order management, and payment processing via Stripe. Include pagination and filtering."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="framework">Framework:</label>
+                    <select id="framework">
+                        <option value="fastapi">FastAPI (Python)</option>
+                        <option value="flask">Flask (Python)</option>
+                        <option value="express">Express (TypeScript)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="auth">Auth Type:</label>
+                    <select id="auth">
+                        <option value="bearer">JWT Bearer Token</option>
+                        <option value="api_key">API Key</option>
+                        <option value="oauth2">OAuth2</option>
+                    </select>
+                </div>
+            </div>
+            <button id="generateBtn" onclick="generateAPI()">🚀 Generate API</button>
+        </section>
+
+        <section id="resultSection" class="card hidden">
+            <h2>Generation Result</h2>
+            <div id="status"></div>
+            <div id="tokenStats" class="stats-grid"></div>
+            <div id="validationResult"></div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('routes')">Routes</button>
+                <button class="tab" onclick="showTab('models')">Models</button>
+                <button class="tab" onclick="showTab('auth')">Auth</button>
+                <button class="tab" onclick="showTab('tests')">Tests</button>
+                <button class="tab" onclick="showTab('openapi')">OpenAPI</button>
+                <button class="tab" onclick="showTab('docs')">Docs</button>
+            </div>
+            <div id="tabContent" class="code-block"></div>
+        </section>
+
+        <section class="card">
+            <h2>📊 Token Consumption</h2>
+            <div id="tokenDashboard">Loading...</div>
+        </section>
+
+        <section class="card">
+            <h2>📋 Recent Jobs</h2>
+            <div id="jobsList">Loading...</div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>APIForge v1.0.0 — Powered by Xiaomi MiMo V2.5 Pro | <code>token-plan-sgp.xiaomimimo.com/v1</code></p>
+        </div>
+    </footer>
+
+    <script>
+        let currentResult = null;
+
+        async function generateAPI() {
+            const btn = document.getElementById('generateBtn');
+            const desc = document.getElementById('description').value;
+            if (!desc.trim()) { alert('Please describe your API'); return; }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+            document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('status').innerHTML = '<p class="loading">Running 8 AI agents...</p>';
+
+            try {
+                const resp = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        description: desc,
+                        framework: document.getElementById('framework').value,
+                        auth_type: document.getElementById('auth').value,
+                    }),
+                });
+                const data = await resp.json();
+                await pollJob(data.job_id);
+            } catch (err) {
+                document.getElementById('status').innerHTML = `<p class="error">Error: ${err.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Generate API';
+            }
+        }
+
+        async function pollJob(jobId) {
+            for (let i = 0; i < 60; i++) {
+                const resp = await fetch(`/api/jobs/${jobId}`);
+                const job = await resp.json();
+                if (job.status === 'completed') {
+                    currentResult = job.result;
+                    renderResult(job.result);
+                    return;
+                }
+                if (job.status === 'failed') {
+                    document.getElementById('status').innerHTML = `<p class="error">Failed: ${job.error}</p>`;
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+
+        function renderResult(result) {
+            document.getElementById('status').innerHTML = `
+                <p class="success">✅ Generated ${result.endpoints_count} endpoints</p>
+                <p>Validation: <strong>${result.validation_score}/100</strong>
+                ${result.validation_valid ? '✅ Valid' : '❌ Has errors'}</p>`;
+
+            const ts = result.token_summary || {};
+            document.getElementById('tokenStats').innerHTML = `
+                <div class="stat"><span class="stat-value">${ts.total_calls || 0}</span><span class="stat-label">API Calls</span></div>
+                <div class="stat"><span class="stat-value">${ts.total_tokens || 0}</span><span class="stat-label">Total Tokens</span></div>`;
+
+            const vr = result.validation_result || result;
+            let valHtml = '';
+            if (vr.validation_errors && vr.validation_errors.length) {
+                valHtml += '<h3>Errors</h3><ul>' + vr.validation_errors.map(e => `<li class="error">${e}</li>`).join('') + '</ul>';
+            }
+            if (vr.validation_warnings && vr.validation_warnings.length) {
+                valHtml += '<h3>Warnings</h3><ul>' + vr.validation_warnings.map(w => `<li class="warning">${w}</li>`).join('') + '</ul>';
+            }
+            document.getElementById('validationResult').innerHTML = valHtml;
+
+            window._tabs = {
+                routes: result.router_code || '// No routes generated',
+                models: result.model_code || '// No models generated',
+                auth: result.auth_code || '// No auth generated',
+                tests: result.test_code || '# No tests generated',
+                openapi: JSON.stringify(result.openapi_spec || {}, null, 2),
+                docs: result.docs || '# No documentation',
+            };
+            showTab('routes');
+        }
+
+        function showTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            const content = (window._tabs && window._tabs[name]) || 'No data';
+            document.getElementById('tabContent').textContent = content;
+        }
+
+        async function loadTokenDashboard() {
+            try {
+                const resp = await fetch('/api/tokens/daily');
+                const data = await resp.json();
+                let html = '<table class="token-table"><tr><th>Agent</th><th>Est. Tokens/Day</th><th>Share</th></tr>';
+                const total = data.total_daily;
+                for (const [agent, tokens] of Object.entries(data.estimates)) {
+                    const share = ((tokens / total) * 100).toFixed(0);
+                    html += `<tr><td>${agent}</td><td>${tokens.toFixed(2)}M</td><td>${share}%</td></tr>`;
+                }
+                html += `<tr class="total"><td><strong>TOTAL</strong></td><td><strong>${total.toFixed(2)}M</strong></td><td>100%</td></tr>`;
+                html += '</table>';
+                document.getElementById('tokenDashboard').innerHTML = html;
+            } catch { document.getElementById('tokenDashboard').innerHTML = '<p>Failed to load</p>'; }
+        }
+
+        async function loadJobs() {
+            try {
+                const resp = await fetch('/api/jobs');
+                const data = await resp.json();
+                if (!data.count) { document.getElementById('jobsList').innerHTML = '<p>No jobs yet</p>'; return; }
+                let html = '<table class="token-table"><tr><th>ID</th><th>Status</th><th>Created</th></tr>';
+                data.jobs.slice(-10).reverse().forEach(j => {
+                    html += `<tr><td>${j.job_id}</td><td>${j.status}</td><td>${j.created_at}</td></tr>`;
+                });
+                html += '</table>';
+                document.getElementById('jobsList').innerHTML = html;
+            } catch { document.getElementById('jobsList').innerHTML = '<p>Failed to load</p>'; }
+        }
+
+        loadTokenDashboard();
+        loadJobs();
+    </script>
+</body>
+</html>

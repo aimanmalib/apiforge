@@ -1,0 +1,26 @@
+"""Tests for ValidateAgent."""
+import pytest
+from apiforge.agents.validator import ValidateAgent, ValidationResult
+
+class TestValidateAgent:
+    @pytest.mark.asyncio
+    async def test_valid_spec(self, config, mock_client, tracker):
+        spec = {"openapi": "3.1.0", "info": {"title": "T", "version": "1.0"}, "paths": {"/x": {"get": {"summary": "Get X", "responses": {"200": {"description": "ok"}}}}}}
+        agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
+        r = await agent.validate(spec)
+        assert r.valid is True
+        assert r.score == 100
+
+    @pytest.mark.asyncio
+    async def test_invalid_spec_missing_openapi(self, config, mock_client, tracker):
+        agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
+        r = await agent.validate({})
+        assert r.valid is False
+        assert len(r.errors) > 0
+
+    @pytest.mark.asyncio
+    async def test_warns_on_missing_summary(self, config, mock_client, tracker):
+        spec = {"openapi": "3.1.0", "info": {"title": "T", "version": "1"}, "paths": {"/x": {"get": {"responses": {"200": {"description": "ok"}}}}}}
+        agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
+        r = await agent.validate(spec)
+        assert len(r.warnings) > 0
