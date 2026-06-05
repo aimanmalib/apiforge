@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an idea or improvement for APIForge
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do that APIForge doesn't support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to happen.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New LLM provider preset
+        - New target framework (Django, Express, Go, ...)
+        - New agent / agent improvement
+        - Validator / OpenAPI checks
+        - Documentation
+        - Other
+    validations:
+      required: true

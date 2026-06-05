@@ -1,7 +1,8 @@
 """Tests for CLI."""
-import pytest
+
 from click.testing import CliRunner
 from apiforge.cli import main
+
 
 class TestCLI:
     def test_help(self):

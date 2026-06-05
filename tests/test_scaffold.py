@@ -1,19 +1,27 @@
 """Tests for ProjectScaffold."""
-import pytest
-from pathlib import Path
+
 from apiforge.scaffold import ProjectScaffold
 from apiforge.pipeline import PipelineResult
 from apiforge.agents.parser import APIDescription
 from apiforge.agents.validator import ValidationResult
 
+
 class TestScaffold:
     def _make_result(self):
         return PipelineResult(
             description=APIDescription(title="Test", description="Test API"),
-            openapi_spec={"openapi": "3.1.0", "info": {"title": "T", "version": "1"}, "paths": {}},
-            router_code="# routes", model_code="# models", auth_code="# auth",
-            test_code="# tests", docs="# docs",
-            validation=ValidationResult(valid=True, errors=[], warnings=[], score=100))
+            openapi_spec={
+                "openapi": "3.1.0",
+                "info": {"title": "T", "version": "1"},
+                "paths": {},
+            },
+            router_code="# routes",
+            model_code="# models",
+            auth_code="# auth",
+            test_code="# tests",
+            docs="# docs",
+            validation=ValidationResult(valid=True, errors=[], warnings=[], score=100),
+        )
 
     def test_scaffold_creates_files(self, tmp_path):
         s = ProjectScaffold(tmp_path / "out")

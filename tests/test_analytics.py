@@ -1,13 +1,22 @@
 """Tests for analytics module."""
-import pytest
+
 from apiforge.analytics import PipelineAnalytics, PipelineMetric
+
 
 class TestPipelineAnalytics:
     def _metric(self, score=90, tokens=1000, calls=5):
         return PipelineMetric(
-            run_id="test", description_length=100, endpoints_generated=3,
-            models_generated=2, validation_score=score, total_tokens=tokens,
-            total_calls=calls, duration_seconds=2.5, framework="fastapi", auth_type="bearer")
+            run_id="test",
+            description_length=100,
+            endpoints_generated=3,
+            models_generated=2,
+            validation_score=score,
+            total_tokens=tokens,
+            total_calls=calls,
+            duration_seconds=2.5,
+            framework="fastapi",
+            auth_type="bearer",
+        )
 
     def test_initial(self):
         a = PipelineAnalytics()
@@ -40,10 +49,20 @@ class TestPipelineAnalytics:
     def test_framework_breakdown(self):
         a = PipelineAnalytics()
         a.record(self._metric())
-        a.record(PipelineMetric(
-            run_id="t2", description_length=50, endpoints_generated=1,
-            models_generated=1, validation_score=70, total_tokens=500,
-            total_calls=3, duration_seconds=1.0, framework="flask", auth_type="api_key"))
+        a.record(
+            PipelineMetric(
+                run_id="t2",
+                description_length=50,
+                endpoints_generated=1,
+                models_generated=1,
+                validation_score=70,
+                total_tokens=500,
+                total_calls=3,
+                duration_seconds=1.0,
+                framework="flask",
+                auth_type="api_key",
+            )
+        )
         fb = a.framework_breakdown()
         assert fb["fastapi"] == 1
         assert fb["flask"] == 1

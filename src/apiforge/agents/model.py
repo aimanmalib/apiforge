@@ -1,4 +1,5 @@
 """ModelAgent -- Generate Pydantic models."""
+
 from __future__ import annotations
 from typing import Any
 from .base import BaseAgent
@@ -13,7 +14,12 @@ class ModelAgent(BaseAgent):
         return "You generate Pydantic v2 models from API descriptions."
 
     def _generate_models(self, desc: APIDescription) -> str:
-        lines = ['"""Auto-generated models."""', "from pydantic import BaseModel, Field", "from typing import Optional", ""]
+        lines = [
+            '"""Auto-generated models."""',
+            "from pydantic import BaseModel, Field",
+            "from typing import Optional",
+            "",
+        ]
         for m in desc.models:
             lines.append(f"class {m['name']}(BaseModel):")
             for fld in m.get("fields", []):
@@ -27,7 +33,9 @@ class ModelAgent(BaseAgent):
 
     async def generate_models(self, desc: APIDescription) -> str:
         code = self._generate_models(desc)
-        resp = await self._call_mimo(f"Review these Pydantic models:\n```python\n{code}\n```")
+        resp = await self._call_mimo(
+            f"Review these Pydantic models:\n```python\n{code}\n```"
+        )
         if "```" in resp.content:
             extracted = resp.content.split("```")[1]
             if extracted.startswith("python"):

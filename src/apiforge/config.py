@@ -55,13 +55,19 @@ DEFAULT_PROVIDER = "mimo"
 
 @dataclass
 class APIForgeConfig:
-    provider: str = field(default_factory=lambda: os.getenv("APIFORGE_PROVIDER", DEFAULT_PROVIDER))
+    provider: str = field(
+        default_factory=lambda: os.getenv("APIFORGE_PROVIDER", DEFAULT_PROVIDER)
+    )
     mimo_api_key: str = field(default_factory=lambda: os.getenv("MIMO_API_KEY", ""))
     mimo_base_url: str = field(default_factory=lambda: os.getenv("MIMO_BASE_URL", ""))
     mimo_model: str = field(default_factory=lambda: os.getenv("MIMO_MODEL", ""))
     auth_style: str = ""  # "bearer" | "api-key" — resolved from provider if blank
-    output_dir: str = field(default_factory=lambda: os.getenv("APIFORGE_OUTPUT_DIR", "./output"))
-    framework: str = field(default_factory=lambda: os.getenv("APIFORGE_FRAMEWORK", "fastapi"))
+    output_dir: str = field(
+        default_factory=lambda: os.getenv("APIFORGE_OUTPUT_DIR", "./output")
+    )
+    framework: str = field(
+        default_factory=lambda: os.getenv("APIFORGE_FRAMEWORK", "fastapi")
+    )
 
     def __post_init__(self) -> None:
         preset = PROVIDER_PRESETS.get(self.provider, PROVIDER_PRESETS[DEFAULT_PROVIDER])

@@ -1,4 +1,5 @@
 """Utility functions for APIForge."""
+
 from __future__ import annotations
 
 import hashlib

@@ -1,6 +1,7 @@
 """Tests for CodeGenerator."""
-import pytest
+
 from apiforge.generator import CodeGenerator
+
 
 class TestCodeGenerator:
     def test_render_fastapi_main(self):

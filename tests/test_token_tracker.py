@@ -1,6 +1,7 @@
 """Tests for token tracker."""
-import pytest
+
 from apiforge.token_tracker import TokenTracker
+
 
 class TestTokenTracker:
     def test_initial(self):

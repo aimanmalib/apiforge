@@ -1,13 +1,12 @@
 """Click CLI for APIForge."""
+
 from __future__ import annotations
 import asyncio
 from pathlib import Path
 import click
 from rich.console import Console
-from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
-from .config import APIForgeConfig
 from .pipeline import APIForgePipeline
 from .token_tracker import TokenTracker
 
@@ -16,7 +15,7 @@ console = Console()
 
 @click.group()
 def main():
-    """APIForge -- API Scaffolding Engine powered by Xiaomi MiMo V2.5 Pro."""
+    """APIForge -- 8-Agent API Scaffolding Engine for any OpenAI-compatible LLM."""
 
 
 @main.command()
@@ -24,6 +23,7 @@ def main():
 @click.option("--output", "-o", default="./output", help="Output directory")
 def generate(description: str, output: str):
     """Generate a complete API from natural language description."""
+
     async def _run():
         pipeline = APIForgePipeline()
         result = await pipeline.generate(description)
@@ -39,7 +39,10 @@ def generate(description: str, output: str):
         console.print(Syntax(result.router_code[:500], "python"))
         v = result.validation
         color = "green" if v.valid else "red"
-        console.print(f"[{color}]Validation: {v.score}/100[/] ({len(v.errors)} errors, {len(v.warnings)} warnings)")
+        console.print(
+            f"[{color}]Validation: {v.score}/100[/] ({len(v.errors)} errors, {len(v.warnings)} warnings)"
+        )
+
     asyncio.run(_run())
 
 
@@ -62,19 +65,24 @@ def stats():
 def validate(spec_file: str):
     """Validate an OpenAPI spec file."""
     import json
+
     content = Path(spec_file).read_text()
     try:
         spec = json.loads(content)
     except json.JSONDecodeError:
         console.print("[red]Invalid JSON[/]")
         return
+
     async def _run():
         pipeline = APIForgePipeline()
         result = await pipeline.validator.validate(spec=spec)
         console.print(f"Valid: {result.valid} | Score: {result.score}/100")
-        for e in result.errors: console.print(f"  [red]ERROR:[/] {e}")
-        for w in result.warnings: console.print(f"  [yellow]WARN:[/] {w}")
+        for e in result.errors:
+            console.print(f"  [red]ERROR:[/] {e}")
+        for w in result.warnings:
+            console.print(f"  [yellow]WARN:[/] {w}")
         await pipeline.client.close()
+
     asyncio.run(_run())
 
 

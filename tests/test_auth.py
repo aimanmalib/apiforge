@@ -1,6 +1,8 @@
 """Tests for AuthAgent."""
+
 import pytest
 from apiforge.agents.auth import AuthAgent
+
 
 class TestAuthAgent:
     @pytest.mark.asyncio

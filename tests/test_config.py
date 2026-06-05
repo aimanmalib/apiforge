@@ -1,6 +1,7 @@
 """Tests for config."""
-import pytest
+
 from apiforge.config import APIForgeConfig
+
 
 class TestConfig:
     def test_default(self):

@@ -1,4 +1,5 @@
 """RouterAgent -- Generate FastAPI route code."""
+
 from __future__ import annotations
 from typing import Any
 from .base import BaseAgent
@@ -12,19 +13,28 @@ class RouterAgent(BaseAgent):
         return "You generate production-ready FastAPI route code."
 
     def _generate_code(self, desc: APIDescription) -> str:
-        lines = ['"""Auto-generated FastAPI routes by APIForge."""', "from fastapi import APIRouter, HTTPException, Query",
-                 'router = APIRouter(prefix="' + desc.base_path + '")', ""]
+        lines = [
+            '"""Auto-generated FastAPI routes by APIForge."""',
+            "from fastapi import APIRouter, HTTPException, Query",
+            'router = APIRouter(prefix="' + desc.base_path + '")',
+            "",
+        ]
         for ep in desc.endpoints:
-            fname = ep.path.strip("/").replace("/", "_").replace("{", "").replace("}", "") or "root"
+            fname = (
+                ep.path.strip("/").replace("/", "_").replace("{", "").replace("}", "")
+                or "root"
+            )
             method = ep.method.lower()
             fname = f"{method}_{fname}"
             params = []
             for p in ep.parameters:
-                ptype = {"integer": "int", "string": "str", "boolean": "bool"}.get(p.get("type", "string"), "str")
+                ptype = {"integer": "int", "string": "str", "boolean": "bool"}.get(
+                    p.get("type", "string"), "str"
+                )
                 if p.get("in") == "path":
                     params.append(f"{p['name']}: {ptype}")
                 else:
-                    params.append(f'{p["name"]}: {ptype} = Query(None)')
+                    params.append(f"{p['name']}: {ptype} = Query(None)")
             if ep.request_body and method in ("post", "put", "patch"):
                 params.append("body: dict")
             ps = ", ".join(params)
@@ -37,7 +47,9 @@ class RouterAgent(BaseAgent):
 
     async def generate_routes(self, desc: APIDescription) -> str:
         code = self._generate_code(desc)
-        resp = await self._call_mimo(f"Review and improve this FastAPI code:\n```python\n{code}\n```")
+        resp = await self._call_mimo(
+            f"Review and improve this FastAPI code:\n```python\n{code}\n```"
+        )
         if "```" in resp.content:
             extracted = resp.content.split("```")[1]
             if extracted.startswith("python"):

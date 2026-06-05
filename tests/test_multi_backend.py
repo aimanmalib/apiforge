@@ -1,7 +1,5 @@
 """Tests for multi-backend provider configuration."""
 
-import pytest
-
 from apiforge.config import (
     DEFAULT_PROVIDER,
     PROVIDER_PRESETS,

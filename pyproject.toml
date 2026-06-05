@@ -5,8 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "apiforge"
 version = "1.0.0"
-description = "API Scaffolding Engine powered by Xiaomi MiMo V2.5 Pro"
+description = "8-Agent API Scaffolding Engine for any OpenAI-compatible LLM (OpenAI, OpenRouter, Ollama, MiMo)"
 requires-python = ">=3.10"
+keywords = ["api", "scaffolding", "ai", "agents", "llm", "openai", "fastapi", "codegen"]
 dependencies = [
     "click>=8.1",
     "rich>=13.0",
@@ -19,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.1.0"]
 
 [project.scripts]
 apiforge = "apiforge.cli:main"

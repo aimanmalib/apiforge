@@ -1,4 +1,5 @@
 """TestAgent -- Generate pytest test suites."""
+
 from __future__ import annotations
 from typing import Any
 from .base import BaseAgent
@@ -12,10 +13,17 @@ class TestAgent(BaseAgent):
         return "You generate comprehensive pytest test suites for FastAPI APIs."
 
     async def generate_tests(self, desc: APIDescription) -> str:
-        lines = ['"""Auto-generated tests by APIForge."""', "import pytest",
-                 "from fastapi.testclient import TestClient", ""]
+        lines = [
+            '"""Auto-generated tests by APIForge."""',
+            "import pytest",
+            "from fastapi.testclient import TestClient",
+            "",
+        ]
         for ep in desc.endpoints:
-            fname = ep.path.strip("/").replace("/", "_").replace("{", "").replace("}", "") or "root"
+            fname = (
+                ep.path.strip("/").replace("/", "_").replace("{", "").replace("}", "")
+                or "root"
+            )
             method = ep.method.lower()
             test_name = f"test_{method}_{fname}"
             lines.append(f"def {test_name}(client):")
