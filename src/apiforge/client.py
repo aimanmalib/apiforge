@@ -1,6 +1,8 @@
-"""MiMo HTTP client for APIForge.
+"""OpenAI-compatible HTTP client for APIForge.
 
-CRITICAL: Uses 'api-key' header — NOT 'Authorization: Bearer'.
+Works with any provider that speaks the OpenAI ``/chat/completions`` protocol
+(OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo Token Plan, ...). The auth
+header style (bearer vs api-key) comes from the config's provider preset.
 """
 from __future__ import annotations
 import json, time
@@ -22,7 +24,7 @@ class CompletionResponse:
     latency_ms: float = 0.0
 
 
-class MiMoClient:
+class LLMClient:
     def __init__(self, config: APIForgeConfig | None = None) -> None:
         self.config = config or APIForgeConfig.from_env()
         self._http: httpx.AsyncClient | None = None
@@ -35,7 +37,7 @@ class MiMoClient:
 
     @property
     def headers(self) -> dict[str, str]:
-        return {"api-key": self.config.mimo_api_key, "Content-Type": "application/json"}
+        return self.config.headers
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._http is None or self._http.is_closed:
@@ -73,3 +75,7 @@ class MiMoClient:
     @property
     def stats(self) -> dict[str, Any]:
         return {"request_count": self._request_count, "total_tokens": self._total_tokens}
+
+
+# Backward-compatible alias. New code should use LLMClient.
+MiMoClient = LLMClient
