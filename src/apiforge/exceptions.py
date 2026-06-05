@@ -1,4 +1,5 @@
 """Custom exceptions for APIForge."""
+
 from __future__ import annotations
 
 

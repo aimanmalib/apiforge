@@ -1,7 +1,7 @@
 """Tests for MiMo client."""
-import pytest
+
 from apiforge.client import MiMoClient, CompletionResponse
-from apiforge.config import APIForgeConfig
+
 
 class TestMiMoClient:
     def test_init(self, config):

@@ -1,10 +1,13 @@
-"""MiMo HTTP client for APIForge.
+"""OpenAI-compatible HTTP client for APIForge.
 
-CRITICAL: Uses 'api-key' header — NOT 'Authorization: Bearer'.
+Works with any provider that speaks the OpenAI ``/chat/completions`` protocol
+(OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo Token Plan, ...). The auth
+header style (bearer vs api-key) comes from the config's provider preset.
 """
+
 from __future__ import annotations
-import json, time
-from dataclasses import dataclass, field
+import time
+from dataclasses import dataclass
 from typing import Any
 import httpx
 from .config import APIForgeConfig
@@ -22,7 +25,7 @@ class CompletionResponse:
     latency_ms: float = 0.0
 
 
-class MiMoClient:
+class LLMClient:
     def __init__(self, config: APIForgeConfig | None = None) -> None:
         self.config = config or APIForgeConfig.from_env()
         self._http: httpx.AsyncClient | None = None
@@ -35,7 +38,7 @@ class MiMoClient:
 
     @property
     def headers(self) -> dict[str, str]:
-        return {"api-key": self.config.mimo_api_key, "Content-Type": "application/json"}
+        return self.config.headers
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._http is None or self._http.is_closed:
@@ -43,14 +46,25 @@ class MiMoClient:
         return self._http
 
     async def chat_completion(
-        self, messages: list[dict[str, str]], *, model: str | None = None,
-        temperature: float = 0.7, max_tokens: int = 4096
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
     ) -> CompletionResponse:
         client = await self._get_client()
-        payload = {"model": model or self.config.mimo_model, "messages": messages,
-                   "temperature": temperature, "max_tokens": max_tokens, "stream": False}
+        payload = {
+            "model": model or self.config.mimo_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
         start = time.monotonic()
-        resp = await client.post(f"{self.base_url}/chat/completions", headers=self.headers, json=payload)
+        resp = await client.post(
+            f"{self.base_url}/chat/completions", headers=self.headers, json=payload
+        )
         resp.raise_for_status()
         data = resp.json()
         elapsed = (time.monotonic() - start) * 1000
@@ -61,10 +75,15 @@ class MiMoClient:
         choice = data.get("choices", [{}])[0]
         msg = choice.get("message", {})
         return CompletionResponse(
-            content=msg.get("content", ""), reasoning_content=msg.get("reasoning_content", ""),
-            model=data.get("model", ""), prompt_tokens=usage.get("prompt_tokens", 0),
-            completion_tokens=usage.get("completion_tokens", 0), total_tokens=tokens,
-            finish_reason=choice.get("finish_reason", ""), latency_ms=round(elapsed, 2))
+            content=msg.get("content", ""),
+            reasoning_content=msg.get("reasoning_content", ""),
+            model=data.get("model", ""),
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            completion_tokens=usage.get("completion_tokens", 0),
+            total_tokens=tokens,
+            finish_reason=choice.get("finish_reason", ""),
+            latency_ms=round(elapsed, 2),
+        )
 
     async def close(self) -> None:
         if self._http and not self._http.is_closed:
@@ -72,4 +91,11 @@ class MiMoClient:
 
     @property
     def stats(self) -> dict[str, Any]:
-        return {"request_count": self._request_count, "total_tokens": self._total_tokens}
+        return {
+            "request_count": self._request_count,
+            "total_tokens": self._total_tokens,
+        }
+
+
+# Backward-compatible alias. New code should use LLMClient.
+MiMoClient = LLMClient

@@ -1,9 +1,15 @@
 """Tests for exceptions."""
-import pytest
+
 from apiforge.exceptions import (
-    APIForgeError, ParseError, GenerationError, ValidationError,
-    MiMoAPIError, QuotaExceededError, RateLimitError,
+    APIForgeError,
+    ParseError,
+    GenerationError,
+    ValidationError,
+    MiMoAPIError,
+    QuotaExceededError,
+    RateLimitError,
 )
+
 
 class TestExceptions:
     def test_base_error(self):

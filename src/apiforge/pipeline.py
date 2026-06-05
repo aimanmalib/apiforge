@@ -1,6 +1,6 @@
 """Pipeline orchestrator for APIForge."""
+
 from __future__ import annotations
-import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 from .client import MiMoClient
@@ -36,14 +36,30 @@ class APIForgePipeline:
         self.config = config or APIForgeConfig.from_env()
         self.client = MiMoClient(self.config)
         self.tracker = TokenTracker()
-        self.parser = ParserAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.schema_agent = SchemaAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.router = RouterAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.model = ModelAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.auth = AuthAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.test_gen = TestAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.doc_gen = DocAgent(client=self.client, config=self.config, tracker=self.tracker)
-        self.validator = ValidateAgent(client=self.client, config=self.config, tracker=self.tracker)
+        self.parser = ParserAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.schema_agent = SchemaAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.router = RouterAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.model = ModelAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.auth = AuthAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.test_gen = TestAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.doc_gen = DocAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
+        self.validator = ValidateAgent(
+            client=self.client, config=self.config, tracker=self.tracker
+        )
 
     async def generate(self, description: str) -> PipelineResult:
         """Run full pipeline: parse -> schema -> code -> test -> docs -> validate."""
@@ -57,6 +73,13 @@ class APIForgePipeline:
         validation = await self.validator.validate(spec=spec)
         await self.client.close()
         return PipelineResult(
-            description=parsed, openapi_spec=spec, router_code=router_code,
-            model_code=model_code, auth_code=auth_code, test_code=test_code,
-            docs=docs, validation=validation, token_summary=self.tracker.summary())
+            description=parsed,
+            openapi_spec=spec,
+            router_code=router_code,
+            model_code=model_code,
+            auth_code=auth_code,
+            test_code=test_code,
+            docs=docs,
+            validation=validation,
+            token_summary=self.tracker.summary(),
+        )

@@ -1,4 +1,5 @@
 """ParserAgent -- Parse natural language API descriptions."""
+
 from __future__ import annotations
 import json
 from dataclasses import dataclass, field
@@ -47,17 +48,26 @@ class ParserAgent(BaseAgent):
             data = json.loads(text.strip())
             endpoints = [
                 ParsedEndpoint(
-                    path=ep.get("path", "/"), method=ep.get("method", "GET").upper(),
-                    description=ep.get("description", ""), parameters=ep.get("parameters", []),
-                    request_body=ep.get("request_body"), response_schema=ep.get("response_schema", {}),
-                    tags=ep.get("tags", []), auth_required=ep.get("auth_required", True),
-                ) for ep in data.get("endpoints", [])
+                    path=ep.get("path", "/"),
+                    method=ep.get("method", "GET").upper(),
+                    description=ep.get("description", ""),
+                    parameters=ep.get("parameters", []),
+                    request_body=ep.get("request_body"),
+                    response_schema=ep.get("response_schema", {}),
+                    tags=ep.get("tags", []),
+                    auth_required=ep.get("auth_required", True),
+                )
+                for ep in data.get("endpoints", [])
             ]
             return APIDescription(
-                title=data.get("title", "API"), description=data.get("description", ""),
-                version=data.get("version", "1.0.0"), base_path=data.get("base_path", "/api/v1"),
-                endpoints=endpoints, auth_type=data.get("auth_type", "bearer"),
-                models=data.get("models", []))
+                title=data.get("title", "API"),
+                description=data.get("description", ""),
+                version=data.get("version", "1.0.0"),
+                base_path=data.get("base_path", "/api/v1"),
+                endpoints=endpoints,
+                auth_type=data.get("auth_type", "bearer"),
+                models=data.get("models", []),
+            )
         except (json.JSONDecodeError, IndexError):
             return APIDescription(title="Parsed API", description=description)
 

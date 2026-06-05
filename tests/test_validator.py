@@ -1,11 +1,24 @@
 """Tests for ValidateAgent."""
+
 import pytest
-from apiforge.agents.validator import ValidateAgent, ValidationResult
+from apiforge.agents.validator import ValidateAgent
+
 
 class TestValidateAgent:
     @pytest.mark.asyncio
     async def test_valid_spec(self, config, mock_client, tracker):
-        spec = {"openapi": "3.1.0", "info": {"title": "T", "version": "1.0"}, "paths": {"/x": {"get": {"summary": "Get X", "responses": {"200": {"description": "ok"}}}}}}
+        spec = {
+            "openapi": "3.1.0",
+            "info": {"title": "T", "version": "1.0"},
+            "paths": {
+                "/x": {
+                    "get": {
+                        "summary": "Get X",
+                        "responses": {"200": {"description": "ok"}},
+                    }
+                }
+            },
+        }
         agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
         r = await agent.validate(spec)
         assert r.valid is True
@@ -20,7 +33,11 @@ class TestValidateAgent:
 
     @pytest.mark.asyncio
     async def test_warns_on_missing_summary(self, config, mock_client, tracker):
-        spec = {"openapi": "3.1.0", "info": {"title": "T", "version": "1"}, "paths": {"/x": {"get": {"responses": {"200": {"description": "ok"}}}}}}
+        spec = {
+            "openapi": "3.1.0",
+            "info": {"title": "T", "version": "1"},
+            "paths": {"/x": {"get": {"responses": {"200": {"description": "ok"}}}}},
+        }
         agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
         r = await agent.validate(spec)
         assert len(r.warnings) > 0

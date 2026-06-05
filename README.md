@@ -1,8 +1,15 @@
 # 🔧 APIForge
 
-**API Scaffolding Engine powered by Xiaomi MiMo V2.5 Pro**
+**8-Agent API Scaffolding Engine for any OpenAI-compatible LLM**
 
 > Describe your API in natural language — get a complete FastAPI backend with OpenAPI spec, routes, models, auth, tests, and docs.
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![CI](https://github.com/aimanmalib/apiforge/actions/workflows/ci.yml/badge.svg)](https://github.com/aimanmalib/apiforge/actions/workflows/ci.yml)
+[![Tests: 144](https://img.shields.io/badge/tests-144-brightgreen.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+Works with **OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo**, or any endpoint that speaks the OpenAI `/chat/completions` protocol. Pick a provider with one config line — no code changes.
 
 ---
 
@@ -42,8 +49,8 @@
 │  └──────────┘                                            │
 │                                                          │
 │  ═══════════════════════════════════════════              │
-│  Xiaomi MiMo V2.5 Pro                                    │
-│  token-plan-sgp.xiaomimimo.com/v1                        │
+│  Any OpenAI-compatible /chat/completions endpoint        │
+│  (OpenAI · OpenRouter · Ollama · MiMo · ...)             │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -62,23 +69,18 @@
 
 **Daily Total: ~2.6M tokens**
 
-## Token Consumption Report
+## Supported Providers
 
-| Metric | Value |
-|--------|-------|
-| Daily token consumption | ~2.6M tokens |
-| Per-generation (avg) | ~15K tokens |
-| Primary model | mimo-v2.5-pro |
-| API endpoint | `token-plan-sgp.xiaomimimo.com/v1` |
-| Auth method | `api-key` header |
+APIForge talks to any OpenAI-compatible `/chat/completions` endpoint. Built-in presets:
 
-## Why MiMo?
+| Provider | `provider=` | Default model | Auth | Env vars |
+|----------|-------------|---------------|------|----------|
+| OpenAI | `openai` | `gpt-4o-mini` | Bearer | `OPENAI_API_KEY`, `OPENAI_BASE_URL` |
+| OpenRouter | `openrouter` | `openai/gpt-4o-mini` | Bearer | `OPENROUTER_API_KEY` |
+| Ollama (local) | `ollama` | `llama3.1` | Bearer | `OLLAMA_BASE_URL` |
+| Xiaomi MiMo | `mimo` | `mimo-v2.5-pro` | api-key | `MIMO_API_KEY` |
 
-1. **Code generation quality** — MiMo produces clean, syntactically correct Python with proper type hints
-2. **Structured output** — Consistently generates valid JSON for OpenAPI specs and Pydantic models
-3. **Cost efficiency** — 8-agent pipeline consumes significant tokens; MiMo's pricing enables full pipeline runs
-4. **Reasoning depth** — Chain-of-thought helps the Validator agent identify subtle spec issues
-5. **API compatibility** — OpenAI-compatible endpoint simplifies integration
+Select a provider with the `APIFORGE_PROVIDER` env var (or `APIForgeConfig(provider=...)`), or point `MIMO_BASE_URL` at any other compatible endpoint (llama.cpp, vLLM, LM Studio, a local proxy). The right auth header (bearer vs api-key) is chosen automatically per provider.
 
 ## Quick Start
 
@@ -86,8 +88,9 @@
 # Install
 pip install -e ".[dev]"
 
-# Set API key
-export MIMO_API_KEY="your-key-here"
+# Pick any provider — set its API key (OpenAI shown here)
+export APIFORGE_PROVIDER=openai
+export OPENAI_API_KEY="sk-your-key-here"
 
 # Generate an API
 apiforge generate "Blog API with users, posts, comments, JWT auth, and pagination"
@@ -122,12 +125,12 @@ $ apiforge generate "E-commerce API with products, cart, orders, Stripe payments
 - Pydantic v2 (models)
 - pytest (testing)
 
-## API Details
+## LLM Backend
 
-- **Endpoint**: `https://token-plan-sgp.xiaomimimo.com/v1/chat/completions`
-- **Model**: `mimo-v2.5-pro`
-- **Auth**: `api-key` header (NOT `Authorization: Bearer`)
-- **Streaming**: SSE with `reasoning_content` field
+- **Protocol**: OpenAI-compatible `/chat/completions`
+- **Providers**: OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo, or any compatible endpoint
+- **Auth**: bearer token or `api-key` header, selected automatically per provider
+- **Config**: set `APIFORGE_PROVIDER` + the provider's API key env var
 
 ## License
 

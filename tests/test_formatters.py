@@ -1,7 +1,7 @@
 """Tests for formatters."""
-import pytest
-from pathlib import Path
+
 from apiforge.formatters import OutputFormatter
+
 
 class TestFormatters:
     def test_to_json(self):
