@@ -9,7 +9,16 @@ from apiforge.config import (
 
 class TestProviderPresets:
     def test_known_providers_present(self):
-        for provider in ("mimo", "openai", "openrouter", "ollama"):
+        for provider in (
+            "mimo",
+            "openai",
+            "openrouter",
+            "ollama",
+            "groq",
+            "deepseek",
+            "together",
+            "mistral",
+        ):
             assert provider in PROVIDER_PRESETS
 
     def test_default_provider_is_mimo(self):
@@ -33,6 +42,26 @@ class TestPresetResolution:
         c = APIForgeConfig(provider="ollama", mimo_api_key="x")
         assert "localhost:11434" in c.base_url
         assert c.model == "llama3.1"
+
+    def test_groq_preset(self):
+        c = APIForgeConfig(provider="groq", mimo_api_key="t")
+        assert "api.groq.com" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_deepseek_preset(self):
+        c = APIForgeConfig(provider="deepseek", mimo_api_key="t")
+        assert "api.deepseek.com" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_together_preset(self):
+        c = APIForgeConfig(provider="together", mimo_api_key="t")
+        assert "api.together.xyz" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_mistral_preset(self):
+        c = APIForgeConfig(provider="mistral", mimo_api_key="t")
+        assert "api.mistral.ai" in c.base_url
+        assert c.auth_style == "bearer"
 
     def test_unknown_provider_falls_back_to_default(self):
         c = APIForgeConfig(provider="nope", mimo_api_key="x")
