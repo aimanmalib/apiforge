@@ -1,7 +1,7 @@
 # Contributing to APIForge
 
 Thanks for your interest in improving APIForge. This project is a
-provider-agnostic, 8-agent API scaffolding engine that runs on any
+provider-agnostic, multi-agent API scaffolding engine that runs on any
 OpenAI-compatible LLM endpoint. Contributions of all sizes are welcome — docs
 fixes, new provider presets, agent improvements, and bug reports all help.
 
@@ -12,7 +12,7 @@ git clone https://github.com/aimanmalib/apiforge.git
 cd apiforge
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest          # 144 tests should pass
+pytest          # all tests should pass
 ```
 
 ## Development workflow
@@ -28,7 +28,7 @@ pytest          # 144 tests should pass
 4. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
    (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`).
 5. Open a pull request against `main`. CI runs lint + format + tests on
-   Python 3.10/3.11/3.12 — keep it green.
+   Python 3.10–3.13 — keep it green.
 
 ## Adding a new LLM provider
 
@@ -52,7 +52,7 @@ the OpenAI protocol.
 
 ## Good first issues
 
-- Add a provider preset (Together, Groq, DeepSeek, Mistral, ...)
+- Add a provider preset for another OpenAI-compatible service
 - Add a target framework (Django REST, Express, Go chi)
 - Improve an agent's generation prompt
 - Expand the validator's spec checks
@@ -62,6 +62,10 @@ the OpenAI protocol.
 - Python 3.10+ with type hints
 - `ruff` for linting and formatting (config in `pyproject.toml`)
 - Public APIs get docstrings
+
+## Security issues
+
+Please don't open public issues for vulnerabilities — see [SECURITY.md](SECURITY.md).
 
 ## Reporting bugs / requesting features
 
