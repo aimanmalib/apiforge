@@ -41,3 +41,13 @@ class TestValidateAgent:
         agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
         r = await agent.validate(spec)
         assert len(r.warnings) > 0
+
+
+class TestValidatorEmptyPaths:
+    @pytest.mark.asyncio
+    async def test_empty_paths_is_an_error(self, config, mock_client, tracker):
+        spec = {"openapi": "3.1.0", "info": {"title": "T", "version": "1"}, "paths": {}}
+        agent = ValidateAgent(client=mock_client, config=config, tracker=tracker)
+        result = await agent.validate(spec)
+        assert result.valid is False
+        assert any("No endpoints" in e for e in result.errors)
