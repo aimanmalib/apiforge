@@ -89,7 +89,7 @@
             btn.disabled = true;
             btn.textContent = '⏳ Generating...';
             document.getElementById('resultSection').classList.remove('hidden');
-            document.getElementById('status').innerHTML = '<p class="loading">Running 8 AI agents...</p>';
+            document.getElementById('status').innerHTML = '<p class="loading">Running the agent pipeline...</p>';
 
             try {
                 const resp = await fetch('/api/generate', {
