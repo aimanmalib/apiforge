@@ -7,6 +7,27 @@ from apiforge.config import APIForgeConfig
 from apiforge.token_tracker import TokenTracker
 
 
+_ENV_VARS = (
+    "APIFORGE_PROVIDER",
+    "APIFORGE_API_KEY",
+    "APIFORGE_BASE_URL",
+    "APIFORGE_MODEL",
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
+    "OPENROUTER_API_KEY",
+    "MIMO_API_KEY",
+    "MIMO_BASE_URL",
+    "MIMO_MODEL",
+)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_env(monkeypatch):
+    """Keep the developer's real provider env vars out of the tests."""
+    for name in _ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+
+
 @pytest.fixture
 def config():
     return APIForgeConfig(
