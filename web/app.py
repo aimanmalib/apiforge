@@ -5,7 +5,7 @@ import asyncio
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -15,11 +15,15 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from apiforge.config import APIForgeConfig
+from apiforge.config import PROVIDER_PRESETS, APIForgeConfig
 from apiforge.pipeline import APIForgePipeline
 from apiforge.token_tracker import TokenTracker
 
 app = FastAPI(title="APIForge Dashboard", version="1.0.0")
+
+_STATIC_DIR = Path(__file__).parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +65,10 @@ class TokenSummary(BaseModel):
     daily_total_estimated_millions: float
 
 
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def _generate_id() -> str:
     import uuid
     return str(uuid.uuid4())[:8]
@@ -80,7 +88,7 @@ async def health():
         "status": "ok",
         "service": "apiforge",
         "version": "1.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": _now(),
     }
 
 
@@ -91,7 +99,7 @@ async def generate_api(req: GenerateRequest):
     _jobs[job_id] = {
         "job_id": job_id,
         "status": "running",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": _now(),
         "completed_at": None,
         "result": None,
         "error": None,
@@ -101,7 +109,7 @@ async def generate_api(req: GenerateRequest):
         pipeline = APIForgePipeline(config)
         result = await pipeline.generate(req.description)
         _jobs[job_id]["status"] = "completed"
-        _jobs[job_id]["completed_at"] = datetime.utcnow().isoformat()
+        _jobs[job_id]["completed_at"] = _now()
         _jobs[job_id]["result"] = {
             "title": result.description.title,
             "endpoints_count": len(result.description.endpoints),
@@ -120,7 +128,7 @@ async def generate_api(req: GenerateRequest):
     except Exception as exc:
         _jobs[job_id]["status"] = "failed"
         _jobs[job_id]["error"] = str(exc)
-        _jobs[job_id]["completed_at"] = datetime.utcnow().isoformat()
+        _jobs[job_id]["completed_at"] = _now()
     return {"job_id": job_id, "status": _jobs[job_id]["status"]}
 
 
@@ -170,13 +178,15 @@ async def get_daily_estimates():
 
 @app.get("/api/models")
 async def list_supported_models():
-    """List supported MiMo models."""
+    """List the built-in provider presets and the currently configured model."""
+    config = APIForgeConfig.from_env()
     return {
+        "provider": config.provider,
         "models": [
-            {"id": "mimo-v2.5-pro", "name": "MiMo V2.5 Pro", "context": 131072},
-            {"id": "mimo-v2.5-flash", "name": "MiMo V2.5 Flash", "context": 131072},
+            {"provider": name, "id": preset["model"]}
+            for name, preset in PROVIDER_PRESETS.items()
         ],
-        "default": "mimo-v2.5-pro",
+        "default": config.model,
     }
 
 
