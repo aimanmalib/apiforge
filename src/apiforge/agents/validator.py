@@ -28,6 +28,8 @@ class ValidateAgent(BaseAgent):
             errors.append("Missing info object")
         if "paths" not in spec:
             errors.append("Missing paths object")
+        elif not spec["paths"]:
+            errors.append("No endpoints defined (paths is empty)")
         info = spec.get("info", {})
         if not info.get("title"):
             errors.append("Missing API title")

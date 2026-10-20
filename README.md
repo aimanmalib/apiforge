@@ -1,141 +1,139 @@
 # 🔧 APIForge
 
-**8-Agent API Scaffolding Engine for any OpenAI-compatible LLM**
+**Multi-agent API scaffolding for any OpenAI-compatible LLM**
 
-> Describe your API in natural language — get a complete FastAPI backend with OpenAPI spec, routes, models, auth, tests, and docs.
+> Describe your API in plain English — get an OpenAPI 3.1 spec, FastAPI routes, Pydantic models, auth middleware, a pytest skeleton and Markdown docs.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![CI](https://github.com/aimanmalib/apiforge/actions/workflows/ci.yml/badge.svg)](https://github.com/aimanmalib/apiforge/actions/workflows/ci.yml)
-[![Tests: 144](https://img.shields.io/badge/tests-144-brightgreen.svg)](tests/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Works with **OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo**, or any endpoint that speaks the OpenAI `/chat/completions` protocol. Pick a provider with one config line — no code changes.
+Works with **OpenAI, OpenRouter, Ollama, Groq, DeepSeek, Together, Mistral, Xiaomi MiMo**, or any self-hosted endpoint that speaks the OpenAI `/chat/completions` protocol (llama.cpp, vLLM, LM Studio, ...). Pick a provider with environment variables — no code changes.
+
+> APIForge produces a **starting point**, not finished software. Review the generated code before you run it anywhere that matters.
 
 ---
 
-## Architecture
+## How it works
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    APIForge Pipeline                      │
-│                                                          │
-│  ┌──────────┐                                            │
-│  │  Parser  │  "Blog API with auth and pagination"       │
-│  │  Agent   │──▶ APIDescription (structured)             │
-│  └──────────┘                                            │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
-│  │ Schema   │  │ Router   │  │  Model   │               │
-│  │ Agent    │  │ Agent    │  │  Agent   │               │
-│  └──────────┘  └──────────┘  └──────────┘               │
-│       │              │              │                     │
-│       ▼              ▼              ▼                     │
-│  OpenAPI 3.1   FastAPI Routes  Pydantic Models           │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
-│  │  Auth    │  │ Test Gen │  │ Doc Gen  │               │
-│  │  Agent   │  │  Agent   │  │  Agent   │               │
-│  └──────────┘  └──────────┘  └──────────┘               │
-│       │              │              │                     │
-│       ▼              ▼              ▼                     │
-│  JWT/API Key    pytest Suite    API.md Docs              │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌──────────┐                                            │
-│  │Validator │  Score: 0-100                              │
-│  │  Agent   │  Errors + Warnings                        │
-│  └──────────┘                                            │
-│                                                          │
-│  ═══════════════════════════════════════════              │
-│  Any OpenAI-compatible /chat/completions endpoint        │
-│  (OpenAI · OpenRouter · Ollama · MiMo · ...)             │
-└─────────────────────────────────────────────────────────┘
+"Todo API with GET /todos"
+          │
+          ▼
+   ┌──────────────┐
+   │ Parser   LLM │  natural language ──▶ structured APIDescription (JSON)
+   └──────────────┘
+          │
+          ├──▶ Schema           OpenAPI 3.1 spec              (deterministic)
+          ├──▶ Router      LLM  FastAPI routes                (template + LLM review)
+          ├──▶ Model       LLM  Pydantic models               (template + LLM review)
+          ├──▶ Auth        LLM  JWT / API-key middleware      (template + LLM review)
+          ├──▶ Test Gen         pytest skeleton               (deterministic)
+          ├──▶ Doc Gen     LLM  API.md                        (template + LLM rewrite)
+          └──▶ Validator        spec checks, score 0–100      (deterministic)
 ```
 
-## Agents
+The pipeline has eight stages. Five of them call the LLM; the schema builder, test generator and validator are plain Python, so one `generate` run makes **5 LLM calls**.
 
-| Agent | Role | Est. Tokens/Day |
-|-------|------|-----------------|
-| **Parser** | Parse NL API descriptions | 0.30M |
-| **Schema** | Generate OpenAPI 3.1 specs | 0.50M |
-| **Router** | Generate FastAPI route code | 0.45M |
-| **Model** | Generate Pydantic models | 0.35M |
-| **Auth** | Generate JWT/API key middleware | 0.20M |
-| **Test Gen** | Generate pytest test suites | 0.40M |
-| **Doc Gen** | Generate API docs (markdown) | 0.25M |
-| **Validator** | Validate OpenAPI specs | 0.15M |
+## Supported providers
 
-**Daily Total: ~2.6M tokens**
+Built-in presets (from [`src/apiforge/config.py`](src/apiforge/config.py)):
 
-## Supported Providers
+| Provider | `APIFORGE_PROVIDER=` | Default model | Auth header | Key env var |
+|----------|----------------------|---------------|-------------|-------------|
+| OpenAI *(default)* | `openai` | `gpt-4o-mini` | `Authorization: Bearer` | `OPENAI_API_KEY` |
+| OpenRouter | `openrouter` | `openai/gpt-4o-mini` | `Authorization: Bearer` | `OPENROUTER_API_KEY` |
+| Ollama (local) | `ollama` | `llama3.1` | `Authorization: Bearer` | `OLLAMA_API_KEY` (optional) |
+| Groq | `groq` | `llama-3.3-70b-versatile` | `Authorization: Bearer` | `GROQ_API_KEY` |
+| DeepSeek | `deepseek` | `deepseek-chat` | `Authorization: Bearer` | `DEEPSEEK_API_KEY` |
+| Together | `together` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `Authorization: Bearer` | `TOGETHER_API_KEY` |
+| Mistral | `mistral` | `mistral-small-latest` | `Authorization: Bearer` | `MISTRAL_API_KEY` |
+| Xiaomi MiMo | `mimo` | `mimo-v2.5-pro` | `api-key` | `MIMO_API_KEY` |
 
-APIForge talks to any OpenAI-compatible `/chat/completions` endpoint. Built-in presets:
+Each preset also reads `<PROVIDER>_BASE_URL` (e.g. `OPENAI_BASE_URL`, `OLLAMA_BASE_URL`) to override its endpoint.
 
-| Provider | `provider=` | Default model | Auth | Env vars |
-|----------|-------------|---------------|------|----------|
-| OpenAI | `openai` | `gpt-4o-mini` | Bearer | `OPENAI_API_KEY`, `OPENAI_BASE_URL` |
-| OpenRouter | `openrouter` | `openai/gpt-4o-mini` | Bearer | `OPENROUTER_API_KEY` |
-| Ollama (local) | `ollama` | `llama3.1` | Bearer | `OLLAMA_BASE_URL` |
-| Groq | `groq` | `llama-3.3-70b-versatile` | Bearer | `GROQ_API_KEY`, `GROQ_BASE_URL` |
-| DeepSeek | `deepseek` | `deepseek-chat` | Bearer | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` |
-| Together | `together` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | Bearer | `TOGETHER_API_KEY`, `TOGETHER_BASE_URL` |
-| Mistral | `mistral` | `mistral-small-latest` | Bearer | `MISTRAL_API_KEY`, `MISTRAL_BASE_URL` |
-| Xiaomi MiMo | `mimo` | `mimo-v2.5-pro` | api-key | `MIMO_API_KEY` |
+These generic variables work with **every** provider and take priority over the provider-specific ones:
 
-Select a provider with the `APIFORGE_PROVIDER` env var (or `APIForgeConfig(provider=...)`), or point `MIMO_BASE_URL` at any other compatible endpoint (llama.cpp, vLLM, LM Studio, a local proxy). The right auth header (bearer vs api-key) is chosen automatically per provider.
+| Variable | Purpose |
+|----------|---------|
+| `APIFORGE_API_KEY` | API key |
+| `APIFORGE_BASE_URL` | Base URL of any OpenAI-compatible endpoint (e.g. `http://localhost:8000/v1`) |
+| `APIFORGE_MODEL` | Model name |
 
-## Quick Start
+## Quick start
 
 ```bash
-# Install
-pip install -e ".[dev]"
+git clone https://github.com/aimanmalib/apiforge.git
+cd apiforge
+pip install -e .            # add ".[dev]" for tests and ruff
 
-# Pick any provider — set its API key (OpenAI shown here)
-export APIFORGE_PROVIDER=openai
-export OPENAI_API_KEY="sk-your-key-here"
+# OpenAI is the default provider
+export OPENAI_API_KEY="sk-..."
 
-# Generate an API
-apiforge generate "Blog API with users, posts, comments, JWT auth, and pagination"
+# Or OpenRouter
+# export APIFORGE_PROVIDER=openrouter
+# export OPENROUTER_API_KEY="sk-or-..."
 
-# Validate a spec
+# Or any self-hosted OpenAI-compatible server
+# export APIFORGE_BASE_URL=http://localhost:8000/v1
+# export APIFORGE_MODEL=my-model
+# export APIFORGE_API_KEY=anything
+
+apiforge --help
+apiforge generate "Todo API with GET /todos returning a list of todos" -o output
 apiforge validate output/openapi.json
-
-# View token stats
-apiforge stats
 ```
+
+`generate` writes these files to the output directory (default `./output`):
+
+| File | Contents |
+|------|----------|
+| `openapi.json` | OpenAPI 3.1 specification |
+| `routes.py` | FastAPI routes |
+| `models.py` | Pydantic models |
+| `auth.py` | JWT or API-key auth dependency |
+| `test_api.py` | pytest skeleton (expects you to provide a `client` fixture) |
+| `API.md` | API documentation |
+
+It finishes by printing the validation score and the number of tokens the run actually used.
+
+`apiforge stats` prints an *illustrative* per-agent token budget. Those numbers are planning estimates, not measurements.
+
+## Web dashboard
+
+A small FastAPI dashboard lives in [`web/`](web/). It is not part of the installed package; run it from the repository root:
+
+```bash
+pip install -e .            # uvicorn is already a dependency
+uvicorn web.app:app --reload
+# open http://127.0.0.1:8000
+```
+
+It uses the same environment variables as the CLI.
 
 ## Example
 
+[`examples/ecommerce/`](examples/ecommerce/) is a curated, runnable sample of the kind of FastAPI code APIForge targets (products, cart, orders; in-memory storage).
+
+## Development
+
 ```bash
-$ apiforge generate "E-commerce API with products, cart, orders, Stripe payments"
-# Generates:
-#   output/openapi.json  - OpenAPI 3.1 specification
-#   output/routes.py     - FastAPI routes
-#   output/models.py     - Pydantic models
-#   output/auth.py       - JWT authentication
-#   output/test_api.py   - pytest test suite
-#   output/API.md        - API documentation
+pip install -e ".[dev]"
+ruff check src/ tests/
+ruff format --check src/ tests/
+pytest
 ```
 
-## Tech Stack
+CI runs the same checks on Python 3.10–3.13. See [CONTRIBUTING.md](CONTRIBUTING.md) to add a provider preset, and [SECURITY.md](SECURITY.md) to report a vulnerability.
 
-- Python 3.10+
-- Click + Rich (CLI)
-- FastAPI (web dashboard)
-- httpx (async HTTP)
-- Jinja2 (code templates)
-- Pydantic v2 (models)
-- pytest (testing)
+## Tech stack
 
-## LLM Backend
-
-- **Protocol**: OpenAI-compatible `/chat/completions`
-- **Providers**: OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo, or any compatible endpoint
-- **Auth**: bearer token or `api-key` header, selected automatically per provider
-- **Config**: set `APIFORGE_PROVIDER` + the provider's API key env var
+Python 3.10+, Click + Rich (CLI), httpx (async HTTP), Pydantic v2, Jinja2, FastAPI (dashboard), pytest.
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+Built by [Sasa Teguh](https://sasateguh.com) · Malaysia

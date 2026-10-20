@@ -2,13 +2,20 @@
 
 APIForge speaks the OpenAI-compatible ``/chat/completions`` protocol, so it
 works with any provider exposing that API: OpenAI, OpenRouter, Ollama, local
-llama.cpp servers, Xiaomi MiMo Token Plan, and more. Select a provider via
-``provider=`` (or the ``APIFORGE_PROVIDER`` env var) or point ``mimo_base_url``
-at any compatible endpoint.
+llama.cpp / vLLM servers, Xiaomi MiMo, and more. Select a provider via
+``provider=`` (or the ``APIFORGE_PROVIDER`` env var, default ``openai``).
 
-The historical ``mimo_*`` fields remain the canonical config attributes for
-backward compatibility; they simply hold whichever provider's key/url/model is
-active.
+Resolution order for the key, base URL and model:
+
+1. explicit constructor arguments;
+2. the generic ``APIFORGE_API_KEY`` / ``APIFORGE_BASE_URL`` / ``APIFORGE_MODEL``
+   env vars (work with every provider, e.g. a self-hosted endpoint);
+3. the provider's own env vars (``OPENAI_API_KEY``, ``OPENROUTER_API_KEY``, ...);
+4. the provider preset's defaults.
+
+The ``mimo_*`` attribute names are kept for backward compatibility; they hold
+whichever provider's key/url/model is active. Prefer the ``api_key`` /
+``base_url`` / ``model`` aliases in new code.
 """
 
 from __future__ import annotations
@@ -26,6 +33,7 @@ PROVIDER_PRESETS: dict[str, dict[str, str]] = {
         "model": "mimo-v2.5-pro",
         "env_key": "MIMO_API_KEY",
         "env_base": "MIMO_BASE_URL",
+        "env_model": "MIMO_MODEL",
     },
     "openai": {
         "base_url": "https://api.openai.com/v1",
@@ -78,7 +86,7 @@ PROVIDER_PRESETS: dict[str, dict[str, str]] = {
     },
 }
 
-DEFAULT_PROVIDER = "mimo"
+DEFAULT_PROVIDER = "openai"
 
 
 @dataclass
@@ -86,9 +94,11 @@ class APIForgeConfig:
     provider: str = field(
         default_factory=lambda: os.getenv("APIFORGE_PROVIDER", DEFAULT_PROVIDER)
     )
-    mimo_api_key: str = field(default_factory=lambda: os.getenv("MIMO_API_KEY", ""))
-    mimo_base_url: str = field(default_factory=lambda: os.getenv("MIMO_BASE_URL", ""))
-    mimo_model: str = field(default_factory=lambda: os.getenv("MIMO_MODEL", ""))
+    mimo_api_key: str = field(default_factory=lambda: os.getenv("APIFORGE_API_KEY", ""))
+    mimo_base_url: str = field(
+        default_factory=lambda: os.getenv("APIFORGE_BASE_URL", "")
+    )
+    mimo_model: str = field(default_factory=lambda: os.getenv("APIFORGE_MODEL", ""))
     auth_style: str = ""  # "bearer" | "api-key" — resolved from provider if blank
     output_dir: str = field(
         default_factory=lambda: os.getenv("APIFORGE_OUTPUT_DIR", "./output")
@@ -98,16 +108,24 @@ class APIForgeConfig:
     )
 
     def __post_init__(self) -> None:
-        preset = PROVIDER_PRESETS.get(self.provider, PROVIDER_PRESETS[DEFAULT_PROVIDER])
-        # Only fall back to a provider env key if the canonical key is empty.
+        preset = self.preset
+        # Fall back to the provider's own env vars, then to the preset defaults.
         if not self.mimo_api_key:
             self.mimo_api_key = os.getenv(preset["env_key"], "")
         if not self.mimo_base_url:
             self.mimo_base_url = os.getenv(preset["env_base"], preset["base_url"])
         if not self.mimo_model:
-            self.mimo_model = preset["model"]
+            env_model = preset.get("env_model")
+            self.mimo_model = (os.getenv(env_model, "") if env_model else "") or preset[
+                "model"
+            ]
         if not self.auth_style:
             self.auth_style = preset["auth_style"]
+
+    @property
+    def preset(self) -> dict[str, str]:
+        """The active provider preset (unknown providers fall back to the default)."""
+        return PROVIDER_PRESETS.get(self.provider, PROVIDER_PRESETS[DEFAULT_PROVIDER])
 
     # Generic, provider-neutral aliases for new code.
     @property
@@ -135,7 +153,9 @@ class APIForgeConfig:
     def validate(self) -> list[str]:
         errors = []
         if not self.mimo_api_key:
-            errors.append("MIMO_API_KEY is not set")
+            errors.append(
+                f"API key is not set (set {self.preset['env_key']} or APIFORGE_API_KEY)"
+            )
         if self.framework not in ("fastapi", "flask", "express"):
             errors.append(f"Unsupported framework: {self.framework}")
         return errors

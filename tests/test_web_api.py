@@ -24,7 +24,28 @@ class TestWebModels:
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["models"]) > 0
-        assert data["default"] == "mimo-v2.5-pro"
+        assert data["provider"] == "openai"
+        assert data["default"] == "gpt-4o-mini"
+
+    def test_list_models_follows_config(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from web.app import app
+
+        monkeypatch.setenv("APIFORGE_PROVIDER", "openrouter")
+        monkeypatch.setenv("APIFORGE_MODEL", "some/model")
+        resp = TestClient(app).get("/api/models")
+        assert resp.json()["provider"] == "openrouter"
+        assert resp.json()["default"] == "some/model"
+
+
+class TestWebStatic:
+    def test_stylesheet_is_served(self):
+        from fastapi.testclient import TestClient
+        from web.app import app
+
+        resp = TestClient(app).get("/static/style.css")
+        assert resp.status_code == 200
+        assert "text/css" in resp.headers["content-type"]
 
 
 class TestWebFrameworks:

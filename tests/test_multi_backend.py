@@ -21,8 +21,8 @@ class TestProviderPresets:
         ):
             assert provider in PROVIDER_PRESETS
 
-    def test_default_provider_is_mimo(self):
-        assert DEFAULT_PROVIDER == "mimo"
+    def test_default_provider_is_openai(self):
+        assert DEFAULT_PROVIDER == "openai"
 
 
 class TestPresetResolution:
@@ -65,7 +65,7 @@ class TestPresetResolution:
 
     def test_unknown_provider_falls_back_to_default(self):
         c = APIForgeConfig(provider="nope", mimo_api_key="x")
-        assert "xiaomimimo.com" in c.base_url
+        assert c.base_url == "https://api.openai.com/v1"
 
     def test_explicit_values_override_preset(self):
         c = APIForgeConfig(
@@ -110,14 +110,36 @@ class TestEnvResolution:
         assert c.mimo_api_key == "or-env"
 
 
+class TestGenericEnv:
+    def test_generic_env_overrides_any_provider(self, monkeypatch):
+        monkeypatch.setenv("APIFORGE_API_KEY", "generic-key")
+        monkeypatch.setenv("APIFORGE_BASE_URL", "http://localhost:8000/v1")
+        monkeypatch.setenv("APIFORGE_MODEL", "my-model")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-should-not-win")
+        c = APIForgeConfig(provider="openai")
+        assert c.api_key == "generic-key"
+        assert c.base_url == "http://localhost:8000/v1"
+        assert c.model == "my-model"
+        assert c.headers["Authorization"] == "Bearer generic-key"
+
+    def test_mimo_key_not_sent_to_other_providers(self, monkeypatch):
+        monkeypatch.setenv("MIMO_API_KEY", "mimo-secret")
+        c = APIForgeConfig(provider="openai")
+        assert c.api_key == ""
+
+
 class TestMiMoBackwardCompat:
-    def test_mimo_defaults(self, monkeypatch):
-        monkeypatch.delenv("MIMO_API_KEY", raising=False)
-        c = APIForgeConfig(mimo_api_key="test")
-        assert c.provider == "mimo"
-        assert c.mimo_model == "mimo-v2.5-pro"
+    def test_mimo_preset(self, monkeypatch):
+        monkeypatch.setenv("MIMO_API_KEY", "test")
+        monkeypatch.setenv("MIMO_MODEL", "mimo-custom")
+        c = APIForgeConfig(provider="mimo")
+        assert c.mimo_model == "mimo-custom"
         assert "xiaomimimo.com" in c.base_url
         assert c.headers["api-key"] == "test"
+
+    def test_mimo_default_model(self):
+        c = APIForgeConfig(provider="mimo", mimo_api_key="k")
+        assert c.model == "mimo-v2.5-pro"
 
     def test_generic_aliases(self):
         c = APIForgeConfig(provider="openai", mimo_api_key="sk-x")

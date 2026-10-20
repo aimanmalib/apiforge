@@ -14,7 +14,7 @@ class TestPipeline:
         assert p.auth is not None
 
     def test_default_config(self, monkeypatch):
-        monkeypatch.setenv("MIMO_API_KEY", "k")
+        monkeypatch.setenv("OPENAI_API_KEY", "k")
         p = APIForgePipeline()
         assert p.config.mimo_api_key == "k"
 

@@ -37,7 +37,9 @@ class TestCodeGenerator:
     def test_render_env_example(self):
         gen = CodeGenerator()
         result = gen.render("env.example.j2", {})
-        assert "MIMO_API_KEY" in result
+        assert "JWT_SECRET" in result
+        # The generated API does not call an LLM, so no LLM keys belong here.
+        assert "MIMO" not in result
 
     def test_render_docker_compose(self):
         gen = CodeGenerator()

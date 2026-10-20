@@ -7,6 +7,7 @@ from .parser import APIDescription
 
 
 class TestAgent(BaseAgent):
+    __test__ = False  # not a pytest test class despite the name
     name = "test_gen"
 
     def _build_system_prompt(self) -> str:
